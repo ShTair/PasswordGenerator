@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace PasswordGenerator
@@ -44,10 +42,11 @@ namespace PasswordGenerator
                 return;
             }
 
+
             args[0] = Path.GetFullPath(args[0]);
             Console.WriteLine($"ロード: {args[0]}");
 
-            var ps = new List<Param>();
+            var gen = new RandomStringGenerator();
             using (var reader = new StreamReader(args[0], Encoding.UTF8))
             {
                 string line;
@@ -60,92 +59,41 @@ namespace PasswordGenerator
                     if (p.Literals == null)
                     {
                         if (p.Count > litcount) continue;
-                        Console.WriteLine($"使用文字{ps.Count + 1}: {p.Count}文字 <- 候補すべての文字");
+                        gen.AddParameter(p.Count);
+                        Console.WriteLine($"使用文字{gen.ParametersCount}: {p.Count}文字 <- 候補すべての文字");
                     }
                     else
                     {
                         litcount += p.Literals.Length;
-                        Console.WriteLine($"使用文字{ps.Count + 1}: {p.Count}文字 <- {string.Join("", p.Literals)}");
+                        gen.AddParameter(p.Count, p.Literals);
+                        Console.WriteLine($"使用文字{gen.ParametersCount}: {p.Count}文字 <- {string.Join("", p.Literals)}");
                     }
-                    ps.Add(p);
                 }
             }
 
-            var passCount = ps.Sum(t => t.Count);
-            if (passCount == 0)
+            if (gen.ParametersCount == 0)
             {
                 Console.WriteLine($"パラメータファイルがうまく読み込めなかったようです。");
                 Console.ReadLine();
                 return;
             }
 
-            var all = Concat(ps.Select(t => t.Literals).Where(t => t != null));
-
-            Console.WriteLine($"パスワード長: {ps.Sum(t => t.Count)}文字");
+            Console.WriteLine($"パスワード長: {gen.Count}文字");
             Console.WriteLine();
 
             while (true)
             {
-                var s = Concat(ps.Select(t => Shuffle(t.Literals == null ? all : t.Literals, t.Count)));
-                var res = Shuffle(s);
-
-                Console.Write(res);
+                Console.Write(gen.Generate());
                 Console.ReadLine();
             }
-        }
-
-        private static char[] Character(int start, int count)
-        {
-            var ret = new char[count];
-            for (int i = 0; i < count; i++)
-            {
-                ret[i] = (char)(start + i);
-            }
-
-            return ret;
-        }
-
-        private static T[] Concat<T>(IEnumerable<T[]> srcs)
-        {
-            var res = new T[srcs.Sum(t => t.Length)];
-            int index = 0;
-
-            foreach (var src in srcs)
-            {
-                src.CopyTo(res, index);
-                index += src.Length;
-            }
-
-            return res;
-        }
-
-        /// <summary>
-        /// sourceは破壊される
-        /// </summary>
-        private static T[] Shuffle<T>(T[] source, int num = -1)
-        {
-            if (num == -1) num = source.Length;
-
-            var v = new T[num];
-            T temp;
-
-            for (int i = 0; i < num; i++)
-            {
-                var ri = _r.Next(i, source.Length);
-                v[i] = temp = source[ri];
-                source[ri] = source[i];
-                source[i] = temp;
-            }
-
-            return v;
         }
 
         class Param
         {
             public int Count { get; }
-            public char[] Literals { get; }
+            public string Literals { get; }
 
-            public Param(int count, char[] literals)
+            public Param(int count, string literals)
             {
                 Count = count;
                 Literals = literals;
@@ -171,7 +119,7 @@ namespace PasswordGenerator
                         if (src.Length >= count + 2)
                         {
                             data = src.Substring(i + 1);
-                            return new Param(count, data.ToArray());
+                            return new Param(count, data);
                         }
                     }
                 }
