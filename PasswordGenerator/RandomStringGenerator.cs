@@ -25,6 +25,16 @@ namespace PasswordGenerator
             Count += count;
         }
 
+        public void AddParameter(string letters, int min = 0, int ratio = 1)
+        {
+            AddParameter(letters.ToArray(), min, ratio);
+        }
+
+        public void AddParameter(char[] letters, int min = 0, int ratio = 1)
+        {
+
+        }
+
         public string Generate()
         {
             var pass = new char[Count];
