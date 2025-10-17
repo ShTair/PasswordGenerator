@@ -1,7 +1,23 @@
-﻿@page "/"
+@page "/"
+@inject NavigationManager Nav
 
 <PageTitle>Home</PageTitle>
 
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
+
+@code {
+    [SupplyParameterFromQuery(Name = "url")]
+    private string? Url { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Url is { })
+        {
+            if (string.IsNullOrEmpty(new Uri(Url).Host)) Nav.NavigateTo(Url, false, true);
+            else Nav.NavigateTo(string.Empty, false, true);
+            return;
+        }
+    }
+}
